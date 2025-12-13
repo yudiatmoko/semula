@@ -46,7 +46,6 @@ class AdminPanelProvider extends PanelProvider
                 Widgets\AccountWidget::class,
                 SemulaInfo::class,
             ])
-
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -61,6 +60,7 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ])
+            ->databaseNotifications()
             ->renderHook(
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
                 fn() => view('filament.login-google')

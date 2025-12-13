@@ -9,4 +9,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreatePenduduk extends CreateRecord
 {
     protected static string $resource = PendudukResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

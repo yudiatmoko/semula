@@ -13,11 +13,14 @@ return new class extends Migration {
         Schema::create('pendukungs', function (Blueprint $table) {
             $table->id();
             $table->string('nik')->unique();
+            $table->foreign('nik')
+                ->references('nik')->on('penduduks')
+                ->onDelete('cascade');
             $table->string('nama');
             $table->string('alamat');
             $table->string('rt');
             $table->string('rw');
-            $table->enum('jenis_kelamin', ['laki-laki', 'perempuan']);
+            $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan']);
             $table->string('koordinator');
             $table->timestamps();
         });

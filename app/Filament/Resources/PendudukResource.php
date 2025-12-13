@@ -2,9 +2,11 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Imports\PendudukImporter;
 use App\Filament\Resources\PendudukResource\Pages;
 use App\Models\Penduduk;
 use App\Models\Pendukung;
+use Filament\Tables\Actions\ImportAction;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -19,20 +21,15 @@ class PendudukResource extends Resource
     protected static ?string $model = Penduduk::class;
     protected static ?string $slug = 'penduduk';
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?string $navigationLabel = 'Master Penduduk';
+    protected static ?string $navigationLabel = 'Data Penduduk';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('nik')->required()->unique(ignoreRecord: true)->maxLength(16),
+                Forms\Components\TextInput::make('nik')->label('NIK')->required()->unique(ignoreRecord: true)->maxLength(16),
                 Forms\Components\TextInput::make('nama')->required(),
-                Forms\Components\Select::make('jenis_kelamin')
-                    ->options([
-                        'laki-laki' => 'Laki-laki',
-                        'perempuan' => 'Perempuan',
-                    ])
-                    ->required(),
+                Forms\Components\Select::make('jenis_kelamin')->required(),
                 Forms\Components\Textarea::make('alamat')->required()->columnSpanFull(),
                 Forms\Components\Grid::make(2)->schema([
                     Forms\Components\TextInput::make('rt')->label('RT')->required(),
@@ -44,14 +41,22 @@ class PendudukResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                ImportAction::make()
+                    ->importer(importer: PendudukImporter::class)
+                    ->label('Impor Data')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->color('success')
+            ])
             ->deselectAllRecordsWhenFiltered(false)
             ->columns([
-                Tables\Columns\TextColumn::make('nik')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('nik')->label('NIK')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('nama')->searchable(),
-                Tables\Columns\TextColumn::make('jenis_kelamin'),
-                Tables\Columns\TextColumn::make('alamat')->limit(20),
-                Tables\Columns\TextColumn::make('rt'),
-                Tables\Columns\TextColumn::make('rw'),
+                Tables\Columns\TextColumn::make('jenis_kelamin')
+                    ->formatStateUsing(fn($state) => ucfirst($state)),
+                Tables\Columns\TextColumn::make('alamat')->limit(30),
+                Tables\Columns\TextColumn::make('rt')->label('RT'),
+                Tables\Columns\TextColumn::make('rw')->label(label: 'RW'),
 
                 Tables\Columns\IconColumn::make('is_recruited')
                     ->label('Status')
@@ -60,12 +65,23 @@ class PendudukResource extends Resource
                     ->falseIcon('heroicon-o-minus')
                     ->state(fn($record) => Pendukung::where('nik', $record->nik)->exists()),
             ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('alamat')
+                    ->options(fn() => Penduduk::select('alamat')->distinct()->pluck('alamat', 'alamat')->toArray())
+                    ->searchable(),
+                Tables\Filters\SelectFilter::make('rt')
+                    ->label('RT')
+                    ->options(fn() => Penduduk::select('rt')->distinct()->pluck('rt', 'rt')->toArray()),
+                Tables\Filters\SelectFilter::make('rw')
+                    ->label('RW')
+                    ->options(fn() => Penduduk::select('rw')->distinct()->pluck('rw', 'rw')->toArray()),
+            ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
 
                     BulkAction::make('salinKePendukung')
-                        ->label('Salin & Set Koordinator')
+                        ->label('Tambah ke Pendukung')
                         ->icon('heroicon-o-user-plus')
                         ->color('success')
                         ->requiresConfirmation()
@@ -103,7 +119,7 @@ class PendudukResource extends Resource
                             }
 
                             if ($berhasil > 0) {
-                                Notification::make()->title("Sukses salin {$berhasil} warga")->success()->send();
+                                Notification::make()->title("Berhasil menambahkan {$berhasil} pendukung")->success()->send();
                             } else {
                                 Notification::make()->title("Data sudah ada")->warning()->send();
                             }

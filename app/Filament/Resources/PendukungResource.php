@@ -21,23 +21,25 @@ class PendukungResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Data Warga (Read Only)')
+                Forms\Components\Section::make('Data Pendukung (Read Only)')
                     ->schema([
-                        Forms\Components\TextInput::make('nik')->disabled(),
+                        Forms\Components\TextInput::make('nik')->label('NIK')->disabled(),
                         Forms\Components\TextInput::make('nama')->disabled(),
-                        Forms\Components\TextInput::make('jenis_kelamin')->disabled(),
+                        Forms\Components\TextInput::make('jenis_kelamin')
+                            ->formatStateUsing(fn ($state) => ucfirst($state))
+                            ->disabled(),
                         Forms\Components\Textarea::make('alamat')->disabled()->columnSpanFull(),
                         Forms\Components\Grid::make(2)->schema([
-                            Forms\Components\TextInput::make('rt')->disabled(),
-                            Forms\Components\TextInput::make('rw')->disabled(),
+                            Forms\Components\TextInput::make('rt')->label('RT')->disabled(),
+                            Forms\Components\TextInput::make('rw')->label('RW')->disabled(),
                         ]),
                     ]),
 
-                Forms\Components\Section::make('Data Timses')
+                Forms\Components\Section::make('Data Koordinator Lapangan')
                     ->schema([
                         Forms\Components\TextInput::make('koordinator')
                             ->required()
-                            ->label('Koordinator Lapangan'),
+                            ->label('Nama Koordinator'),
                     ]),
             ]);
     }
@@ -53,19 +55,29 @@ class PendukungResource extends Resource
                     ->searchable()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('nik')->label('NIK')->searchable(),
                 Tables\Columns\TextColumn::make('nama')->searchable(),
-                Tables\Columns\TextColumn::make('alamat'),
+                Tables\Columns\TextColumn::make('jenis_kelamin')
+                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                Tables\Columns\TextColumn::make('alamat')->limit(30),
                 Tables\Columns\TextColumn::make('rt')->label('RT'),
-                Tables\Columns\TextColumn::make('rw')->label('RW'),
-                Tables\Columns\TextColumn::make('jenis_kelamin')->label('L/P'),
+                Tables\Columns\TextColumn::make('rw')->label('RW')
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('koordinator')
                     ->options(fn() => Pendukung::pluck('koordinator', 'koordinator')->unique()->toArray()),
+                Tables\Filters\SelectFilter::make('alamat')
+                    ->options(fn() => Pendukung::select('alamat')->distinct()->pluck('alamat', 'alamat')->toArray())
+                    ->searchable(),
+                Tables\Filters\SelectFilter::make('rt')
+                    ->label('RT')
+                    ->options(fn() => Pendukung::select('rt')->distinct()->pluck('rt', 'rt')->toArray()),
+                Tables\Filters\SelectFilter::make('rw')
+                    ->label('RW')
+                    ->options(fn() => Pendukung::select('rw')->distinct()->pluck('rw', 'rw')->toArray()),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
