@@ -20,6 +20,8 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Widgets\SemulaInfo;
+use App\Filament\Widgets\GrafikPendukung;
+use App\Filament\Widgets\GrafikPendukungPie;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -42,10 +44,6 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
-                Widgets\AccountWidget::class,
-                SemulaInfo::class,
-            ])
 
             ->middleware([
                 EncryptCookies::class,
