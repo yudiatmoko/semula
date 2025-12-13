@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
+use Filament\Notifications\Notification;
 
 class GoogleAuthController extends Controller
 {
@@ -18,7 +19,15 @@ class GoogleAuthController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
 
-            // Cari user berdasarkan google_id atau email
+            if ($googleUser->email !== config('services.google.allowed_email')) {
+                Notification::make()
+                    ->title('Akses Ditolak')
+                    ->body('Email ini tidak diizinkan untuk mendaftar/login.')
+                    ->danger()
+                    ->send();
+                return redirect('/admin/login');
+            }
+
             $user = User::where('google_id', $googleUser->id)
                 ->orWhere('email', $googleUser->email)
                 ->first();
@@ -41,7 +50,12 @@ class GoogleAuthController extends Controller
             return redirect('/admin');
 
         } catch (\Exception $e) {
-            return redirect('/admin/login')->with('error', 'Gagal login dengan Google.');
+            Notification::make()
+                ->title('Login Gagal')
+                ->body('Gagal login dengan Google.')
+                ->danger()
+                ->send();
+            return redirect('/admin/login');
         }
     }
 }
