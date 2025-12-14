@@ -44,6 +44,7 @@ class PendudukResource extends Resource
             ->headerActions([
                 ImportAction::make()
                     ->importer(importer: PendudukImporter::class)
+                    ->chunkSize(500)
                     ->label('Impor Data')
                     ->icon('heroicon-o-arrow-up-tray')
                     ->color('success')

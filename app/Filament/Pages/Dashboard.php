@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Widgets\TotalPenduduk;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Widgets\AccountWidget;
 use App\Filament\Widgets\SemulaInfo;
@@ -15,13 +16,14 @@ use App\Filament\Widgets\GrafikAktivitasPendukung;
 
 class Dashboard extends BaseDashboard
 {
-    
+
 
     public function getWidgets(): array
     {
         return [
-            AccountWidget::class,
             SemulaInfo::class,
+            AccountWidget::class,
+            TotalPenduduk::class,
             TotalPendukung::class,
             GrafikPendukung::class,
             GrafikPendukungPie::class,
