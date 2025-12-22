@@ -29,7 +29,12 @@ class PendudukResource extends Resource
             ->schema([
                 Forms\Components\TextInput::make('nik')->label('NIK')->required()->unique(ignoreRecord: true)->maxLength(16),
                 Forms\Components\TextInput::make('nama')->required(),
-                Forms\Components\Select::make('jenis_kelamin')->required(),
+                Forms\Components\Select::make('jenis_kelamin')
+                    ->label('Jenis Kelamin')
+                    ->options([
+                        'Laki-laki' => 'Laki-laki',
+                        'Perempuan' => 'Perempuan',
+                    ])->required(),
                 Forms\Components\Textarea::make('alamat')->required()->columnSpanFull(),
                 Forms\Components\Grid::make(2)->schema([
                     Forms\Components\TextInput::make('rt')->label('RT')->required(),
