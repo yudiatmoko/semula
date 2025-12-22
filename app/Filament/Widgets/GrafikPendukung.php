@@ -136,45 +136,63 @@ class GrafikPendukung extends ChartWidget
     /**
      * 📊 DATA GRAFIK + WARNA
      */
-    protected function getData(): array
-    {
-        $query = Pendukung::query();
+   protected function getData(): array
+{
+    $query = Pendukung::query();
 
-        foreach (['alamat', 'rt', 'rw', 'jenis_kelamin'] as $field) {
-            if (!empty($this->filters[$field] ?? null)) {
-                $query->where($field, $this->filters[$field]);
-            }
+    foreach (['alamat', 'rt', 'rw', 'jenis_kelamin'] as $field) {
+        if (!empty($this->filters[$field] ?? null)) {
+            $query->where($field, $this->filters[$field]);
         }
-
-        $data = $query
-            ->selectRaw("
-                CONCAT(
-                    IFNULL(alamat, ''),
-                    ' | RT ', rt,
-                    '/RW ', rw
-                ) as label,
-                COUNT(*) as total
-            ")
-            ->groupBy('alamat', 'rt', 'rw')
-            ->orderBy('rw')
-            ->orderBy('rt')
-            ->pluck('total', 'label');
-
-        $colors = $this->generateColors($data->count());
-
-        return [
-            'datasets' => [
-                [
-                    'label' => 'Jumlah Pendukung',
-                    'data' => $data->values()->toArray(),
-                    'backgroundColor' => $colors,   // 🔥 WARNA BAR
-                    'borderColor' => $colors,
-                    'borderWidth' => 1,
-                ],
-            ],
-            'labels' => $data->keys()->toArray(),
-        ];
     }
+
+    // 🔹 Ambil semua data dulu
+    $collection = $query
+        ->selectRaw("
+            CONCAT(
+                IFNULL(alamat, ''),
+                ' | RT ', rt,
+                '/RW ', rw
+            ) as label,
+            COUNT(*) as total
+        ")
+        ->groupBy('alamat', 'rt', 'rw')
+        ->get()
+        ->mapWithKeys(fn ($item) => [
+            $item->label => $item->total
+        ]);
+
+    // 🔥 5 TERATAS
+    $top5 = $collection
+        ->sortDesc()
+        ->take(5);
+
+    // ❄️ 5 TERENDAH
+    $bottom5 = $collection
+        ->sort()
+        ->take(5);
+
+    // 🔗 Gabungkan & pastikan unik
+    $data = $top5
+        ->merge($bottom5)
+        ->unique()
+        ->sortDesc();
+
+    $colors = $this->generateColors($data->count());
+
+    return [
+        'datasets' => [
+            [
+                'label' => 'Jumlah Pendukung',
+                'data' => $data->values()->toArray(),
+                'backgroundColor' => $colors,
+                'borderColor' => $colors,
+                'borderWidth' => 1,
+            ],
+        ],
+        'labels' => $data->keys()->toArray(),
+    ];
+}
 
     /**
      * 🎨 GENERATOR WARNA DINAMIS
