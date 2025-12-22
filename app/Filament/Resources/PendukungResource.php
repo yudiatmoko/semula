@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 use App\Filament\Resources\PendukungResource\Pages;
 use App\Models\Pendukung;
 use Filament\Forms;
@@ -26,7 +27,7 @@ class PendukungResource extends Resource
                         Forms\Components\TextInput::make('nik')->label('NIK')->disabled(),
                         Forms\Components\TextInput::make('nama')->disabled(),
                         Forms\Components\TextInput::make('jenis_kelamin')
-                            ->formatStateUsing(fn ($state) => ucfirst($state))
+                            ->formatStateUsing(fn($state) => ucfirst($state))
                             ->disabled(),
                         Forms\Components\Textarea::make('alamat')->disabled()->columnSpanFull(),
                         Forms\Components\Grid::make(2)->schema([
@@ -58,7 +59,7 @@ class PendukungResource extends Resource
                 Tables\Columns\TextColumn::make('nik')->label('NIK')->searchable(),
                 Tables\Columns\TextColumn::make('nama')->searchable(),
                 Tables\Columns\TextColumn::make('jenis_kelamin')
-                    ->formatStateUsing(fn ($state) => ucfirst($state)),
+                    ->formatStateUsing(fn($state) => ucfirst($state)),
                 Tables\Columns\TextColumn::make('alamat')->limit(30),
                 Tables\Columns\TextColumn::make('rt')->label('RT'),
                 Tables\Columns\TextColumn::make('rw')->label('RW')
@@ -86,6 +87,7 @@ class PendukungResource extends Resource
                         ->label('Hapus Data Terpilih'),
 
                 ]),
+                FilamentExportBulkAction::make('export')->disableAdditionalColumns()
             ]);
     }
 
