@@ -2,11 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Imports\PendudukImporter;
 use App\Filament\Resources\PendudukResource\Pages;
 use App\Models\Penduduk;
 use App\Models\Pendukung;
-use Filament\Tables\Actions\ImportAction;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -46,23 +44,17 @@ class PendudukResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->headerActions([
-                ImportAction::make()
-                    ->importer(importer: PendudukImporter::class)
-                    ->chunkSize(500)
-                    ->label('Impor Data')
-                    ->icon('heroicon-o-arrow-up-tray')
-                    ->color('success')
-            ])
+            ->paginated([50, 100, 500])
+            ->defaultPaginationPageOption(50)
             ->deselectAllRecordsWhenFiltered(false)
             ->columns([
                 Tables\Columns\TextColumn::make('nik')->label('NIK')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('nama')->searchable(),
                 Tables\Columns\TextColumn::make('jenis_kelamin')
                     ->formatStateUsing(fn($state) => ucfirst($state)),
-                Tables\Columns\TextColumn::make('alamat')->limit(30),
-                Tables\Columns\TextColumn::make('rt')->label('RT'),
-                Tables\Columns\TextColumn::make('rw')->label(label: 'RW'),
+                Tables\Columns\TextColumn::make('alamat')->searchable()->limit(30),
+                Tables\Columns\TextColumn::make('rt')->label('RT')->searchable(),
+                Tables\Columns\TextColumn::make('rw')->label(label: 'RW')->searchable(),
 
                 Tables\Columns\IconColumn::make('is_recruited')
                     ->label('Status')
