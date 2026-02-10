@@ -6,14 +6,12 @@ use App\Models\Penduduk;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
-use Maatwebsite\Excel\Concerns\WithChunkReading; // 1. Import interface ini
+use Maatwebsite\Excel\Concerns\WithChunkReading;
 
-class PendudukImport implements ToModel, WithHeadingRow, WithValidation, WithChunkReading // 2. Implement di sini
+class PendudukImport implements ToModel, WithHeadingRow, WithValidation, WithChunkReading
 {
     public function model(array $row)
     {
-        // updateOrCreate memang agak lambat dibanding insert biasa,
-        // tapi aman untuk menghindari duplikasi data.
         return Penduduk::updateOrCreate(
             ['nik' => $row['nik']],
             [
@@ -31,13 +29,11 @@ class PendudukImport implements ToModel, WithHeadingRow, WithValidation, WithChu
         return [
             'nik' => 'required',
             'nama' => 'required',
-            // Tambahkan validasi lain jika perlu
         ];
     }
 
-    // 3. Tentukan jumlah baris yang diproses per batch (Hemat RAM)
     public function chunkSize(): int
     {
-        return 500; // Proses per 500 baris
+        return 500;
     }
 }

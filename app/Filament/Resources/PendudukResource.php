@@ -30,8 +30,8 @@ class PendudukResource extends Resource
                 Forms\Components\Select::make('jenis_kelamin')
                     ->label('Jenis Kelamin')
                     ->options([
-                        'Laki-laki' => 'Laki-laki',
-                        'Perempuan' => 'Perempuan',
+                        'L' => 'L',
+                        'P' => 'P',
                     ])->required(),
                 Forms\Components\Textarea::make('alamat')->required()->columnSpanFull(),
                 Forms\Components\Grid::make(2)->schema([

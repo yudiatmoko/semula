@@ -24,9 +24,9 @@ class PendudukFactory extends Factory
             }
         }
 
-        $jk = fake()->randomElement(['Laki-laki', 'Perempuan']);
+        $jk = fake()->randomElement(['L', 'P']);
         
-        $genderCode = $jk == 'Laki-laki' ? 'male' : 'female';
+        $genderCode = $jk == 'L' ? 'male' : 'female';
 
         return [
             'nik' => '32' . fake()->unique()->numerify('##############'), 

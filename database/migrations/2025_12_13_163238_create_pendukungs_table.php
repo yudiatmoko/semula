@@ -17,11 +17,13 @@ return new class extends Migration {
                 ->references('nik')->on('penduduks')
                 ->onDelete('cascade');
             $table->string('nama');
-            $table->string('alamat');
+            $table->string('alamat')->nullable();
             $table->string('rt');
             $table->string('rw');
-            $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan']);
-            $table->string('koordinator');
+            $table->enum('jenis_kelamin', ['L', 'P']);
+            $table->foreignId('koordinator_id')
+                ->constrained('koordinators')
+                ->onDelete('cascade');
             $table->timestamps();
         });
     }

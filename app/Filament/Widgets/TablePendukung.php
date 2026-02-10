@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use Filament\Widgets\TableWidget;
 use Filament\Tables;
 use App\Models\Pendukung;
+use App\Models\Penduduk;
 use Illuminate\Database\Eloquent\Builder;
 
 class TablePendukung extends TableWidget
@@ -13,50 +14,47 @@ class TablePendukung extends TableWidget
 
     protected int|string|array $columnSpan = 'full';
 
-    /**
-     * 🔑 RECORD KEY (WAJIB & UNIQUE UNTUK GROUP BY)
-     */
+    public function table(Tables\Table $table): Tables\Table
+    {
+        return $table
+            ->query($this->getTableQuery())
+            ->columns($this->getTableColumns())
+            ->filters($this->getTableFilters())
+            ->paginated(false)
+            ->defaultSort('persentase', 'desc');
+    }
+
     public function getTableRecordKey($record): string
     {
         return md5(
-            ($record->alamat ?? '') .
             ($record->rt ?? '') .
             ($record->rw ?? '')
         );
     }
 
-    /**
-     * 📊 QUERY DATA
-     */
     protected function getTableQuery(): Builder
     {
-        return Pendukung::query()
+        return Penduduk::query()
             ->selectRaw('
-                alamat,
-                rt,
-                rw,
-                COUNT(*) as total_pendukung
-            ')
-            ->groupBy('alamat', 'rt', 'rw')
-            ->orderBy('alamat')
-            ->orderBy('rw')
-            ->orderBy('rt');
+                    rt,
+                    rw,
+                    COUNT(*) as total_penduduk,
+                    (
+                        SELECT COUNT(*) 
+                        FROM pendukungs 
+                        WHERE pendukungs.rt = penduduks.rt 
+                        AND pendukungs.rw = penduduks.rw
+                    ) as total_pendukung
+                ')
+            ->groupBy('rt', 'rw');
     }
 
-    /**
-     * 🧱 KOLOM TABEL
-     */
     protected function getTableColumns(): array
     {
         return [
             Tables\Columns\TextColumn::make('row_number')
                 ->label('No')
                 ->rowIndex(),
-
-            Tables\Columns\TextColumn::make('alamat')
-                ->label('Alamat')
-                ->sortable()
-                ->searchable(),
 
             Tables\Columns\TextColumn::make('rt')
                 ->label('RT')
@@ -66,26 +64,51 @@ class TablePendukung extends TableWidget
                 ->label('RW')
                 ->sortable(),
 
+            Tables\Columns\TextColumn::make('total_penduduk')
+                ->label('Jumlah Penduduk')
+                ->sortable(),
+
             Tables\Columns\TextColumn::make('total_pendukung')
                 ->label('Total Pendukung')
+                ->sortable()
+                ->badge(),
+
+            Tables\Columns\TextColumn::make('persentase')
+                ->label('Persentase')
+                ->state(function ($record) {
+                    $total = $record->total_penduduk;
+                    $count = $record->total_pendukung;
+                    return $total > 0 ? round(($count / $total) * 100, 1) . '%' : '0%';
+                })
                 ->badge()
-                ->color('success')
-                ->sortable(),
+                ->color(
+                    fn($state) =>
+                    (float) $state >= 75 ? 'success' :
+                    ((float) $state >= 50 ? 'warning' :
+                        'danger')
+                )
+                ->sortable(query: function (Builder $query, string $direction): Builder {
+                    return $query->orderByRaw("
+            (
+                (SELECT COUNT(*) 
+                 FROM pendukungs 
+                 WHERE pendukungs.rt = penduduks.rt 
+                 AND pendukungs.rw = penduduks.rw) 
+                / 
+                COUNT(*)
+            ) $direction
+        ");
+                }),
         ];
     }
 
-    /**
-     * 🔍 FILTER (ALAMAT + RT + RW)
-     * KOSONG = TAMPIL SEMUA
-     */
     protected function getTableFilters(): array
     {
         return [
-            // FILTER ALAMAT
             Tables\Filters\SelectFilter::make('alamat')
                 ->label('Alamat')
                 ->options(
-                    Pendukung::query()
+                    Penduduk::query()
                         ->select('alamat')
                         ->distinct()
                         ->orderBy('alamat')
@@ -100,11 +123,10 @@ class TablePendukung extends TableWidget
                     return $query;
                 }),
 
-            // FILTER RT
             Tables\Filters\SelectFilter::make('rt')
                 ->label('RT')
                 ->options(
-                    Pendukung::query()
+                    Penduduk::query()
                         ->select('rt')
                         ->distinct()
                         ->orderBy('rt')
@@ -119,11 +141,10 @@ class TablePendukung extends TableWidget
                     return $query;
                 }),
 
-            // FILTER RW
             Tables\Filters\SelectFilter::make('rw')
                 ->label('RW')
                 ->options(
-                    Pendukung::query()
+                    Penduduk::query()
                         ->select('rw')
                         ->distinct()
                         ->orderBy('rw')

@@ -20,18 +20,17 @@ class ListPenduduks extends ListRecords
     {
         return [
             Actions\Action::make('downloadTemplate')
-                ->label('Download Template')
+                ->label('Unduh template')
                 ->icon('heroicon-o-document-arrow-down')
-                ->color('info') // Warna biru
+                ->color('info')
                 ->action(function () {
-                    // Download file template saat diklik
                     return Excel::download(
                         new PendudukTemplateExport(),
                         'template_penduduk.xlsx'
                     );
                 }),
             Actions\Action::make('importPenduduk')
-                ->label('Impor Data')
+                ->label('Impor data')
                 ->icon('heroicon-o-arrow-up-tray')
                 ->color('success')
                 ->closeModalByClickingAway(false)

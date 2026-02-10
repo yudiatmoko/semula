@@ -8,9 +8,6 @@ use Illuminate\Support\Facades\Auth;
 
 class PendukungObserver
 {
-    /**
-     * 🔹 SAAT DATA DITAMBAH
-     */
     public function created(Pendukung $pendukung): void
     {
         PendukungLog::create([
@@ -20,10 +17,7 @@ class PendukungObserver
             'tanggal'   => now()->toDateString(),
         ]);
     }
-
-    /**
-     * 🔹 SAAT DATA DIHAPUS
-     */
+    
     public function deleted(Pendukung $pendukung): void
     {
         PendukungLog::create([

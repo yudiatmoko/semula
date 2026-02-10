@@ -23,7 +23,7 @@ class PendudukImporter extends Importer
                 ->rules(['required']),
 
             ImportColumn::make('jenis_kelamin')
-                ->rules(['required', 'in:Laki-laki,Perempuan']),
+                ->rules(['required', 'in:L,P']),
 
             ImportColumn::make('alamat')
                 ->requiredMapping(),

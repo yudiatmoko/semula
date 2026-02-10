@@ -4,9 +4,11 @@ namespace App\Filament\Resources;
 
 use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 use App\Filament\Resources\PendukungResource\Pages;
+use App\Models\Penduduk;
 use App\Models\Pendukung;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -22,17 +24,63 @@ class PendukungResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Data Pendukung (Read Only)')
+                Forms\Components\Section::make('Pilih Penduduk')
                     ->schema([
-                        Forms\Components\TextInput::make('nik')->label('NIK')->disabled(),
-                        Forms\Components\TextInput::make('nama')->disabled(),
+                        Forms\Components\Select::make('penduduk_id')
+                            ->label('Cari berdasarkan NIK / Nama')
+                            ->searchable()
+                            ->getSearchResultsUsing(function (string $search) {
+                                return Penduduk::query()
+                                    ->where('nik', 'like', "%{$search}%")
+                                    ->orWhere('nama', 'like', "%{$search}%")
+                                    ->limit(20)
+                                    ->get()
+                                    ->mapWithKeys(fn($p) => [
+                                        $p->nik => "{$p->nik} — {$p->nama}",
+                                    ])
+                                    ->toArray();
+                            })
+                            ->live()
+                            ->afterStateUpdated(function ($state, Set $set) {
+                                if (!$state) {
+                                    $set('nik', null);
+                                    $set('nama', null);
+                                    $set('jenis_kelamin', null);
+                                    $set('alamat', null);
+                                    $set('rt', null);
+                                    $set('rw', null);
+                                    return;
+                                }
+
+                                $penduduk = Penduduk::where('nik', $state)->first();
+                                if ($penduduk) {
+                                    $set('nik', $penduduk->nik);
+                                    $set('nama', $penduduk->nama);
+                                    $set('jenis_kelamin', $penduduk->jenis_kelamin);
+                                    $set('alamat', $penduduk->alamat);
+                                    $set('rt', $penduduk->rt);
+                                    $set('rw', $penduduk->rw);
+                                }
+                            })
+                            ->dehydrated(false)
+                            ->visibleOn('create')
+                            ->required(),
+                    ])
+                    ->visibleOn('create'),
+
+                Forms\Components\Section::make('Data Pendukung')
+                    ->schema([
+                        Forms\Components\TextInput::make('nik')->label('NIK')->disabled()->dehydrated(),
+                        Forms\Components\TextInput::make('nama')->disabled()->dehydrated(),
                         Forms\Components\TextInput::make('jenis_kelamin')
+                            ->label('Jenis Kelamin')
                             ->formatStateUsing(fn($state) => ucfirst($state))
-                            ->disabled(),
-                        Forms\Components\Textarea::make('alamat')->disabled()->columnSpanFull(),
+                            ->disabled()
+                            ->dehydrated(),
+                        Forms\Components\Textarea::make('alamat')->disabled()->dehydrated()->columnSpanFull(),
                         Forms\Components\Grid::make(2)->schema([
-                            Forms\Components\TextInput::make('rt')->label('RT')->disabled(),
-                            Forms\Components\TextInput::make('rw')->label('RW')->disabled(),
+                            Forms\Components\TextInput::make('rt')->label('RT')->disabled()->dehydrated(),
+                            Forms\Components\TextInput::make('rw')->label('RW')->disabled()->dehydrated(),
                         ]),
                     ]),
 
@@ -48,6 +96,8 @@ class PendukungResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->paginated([50, 100, 500])
+            ->defaultPaginationPageOption(50)
             ->columns([
                 Tables\Columns\TextColumn::make('koordinator')
                     ->label('Koordinator')
@@ -86,8 +136,9 @@ class PendukungResource extends Resource
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('Hapus Data Terpilih'),
 
+                    FilamentExportBulkAction::make('export')->label("Ekspor")->disableAdditionalColumns(),
+
                 ]),
-                FilamentExportBulkAction::make('export')->disableAdditionalColumns()
             ]);
     }
 

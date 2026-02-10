@@ -6,7 +6,7 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromArray;
 
-class PendudukTemplateExport implements WithHeadings, ShouldAutoSize, FromArray
+class PendukungTemplateExport implements WithHeadings, ShouldAutoSize, FromArray
 {
     public function headings(): array
     {
@@ -17,13 +17,14 @@ class PendudukTemplateExport implements WithHeadings, ShouldAutoSize, FromArray
             'alamat',
             'rt',
             'rw',
+            'koordinator',
         ];
     }
 
     public function array(): array
     {
         return [
-            ['3201234567890001', 'John Doe', 'L', 'Jl. Merdeka No. 10', '001', '002'],
+            ['3201234567890001', 'John Doe', 'L', 'Jl. Merdeka No. 10', '001', '002', 'Pak Budi'],
         ];
     }
 }

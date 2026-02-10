@@ -16,8 +16,8 @@ class TotalPenduduk extends StatsOverviewWidget
     protected function getStats(): array
     {
         $total = Penduduk::count();
-        $laki = Penduduk::where('jenis_kelamin', 'Laki-laki')->count();
-        $perempuan = Penduduk::where('jenis_kelamin', 'Perempuan')->count();
+        $laki = Penduduk::where('jenis_kelamin', 'L')->count();
+        $perempuan = Penduduk::where('jenis_kelamin', 'P')->count();
 
         $persenLaki = $total > 0 ? round(($laki / $total) * 100, 1) : 0;
         $persenPerempuan = $total > 0 ? round(($perempuan / $total) * 100, 1) : 0;

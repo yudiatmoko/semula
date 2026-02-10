@@ -5,28 +5,19 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('penduduks', function (Blueprint $table) {
+        Schema::create('koordinators', function (Blueprint $table) {
             $table->id();
-            $table->string('nik')->unique();
             $table->string('nama');
-            $table->string('alamat')->nullable();
             $table->string('rt');
             $table->string('rw');
-            $table->enum('jenis_kelamin', ['L', 'P']);
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('penduduks');
+        Schema::dropIfExists('koordinators');
     }
 };

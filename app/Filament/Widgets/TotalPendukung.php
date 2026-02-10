@@ -18,8 +18,8 @@ class TotalPendukung extends StatsOverviewWidget
     {
         $totalPenduduk = Penduduk::count();
         $totalPendukung = Pendukung::count();
-        $laki = Pendukung::where('jenis_kelamin', 'Laki-laki')->count();
-        $perempuan = Pendukung::where('jenis_kelamin', 'Perempuan')->count();
+        $laki = Pendukung::where('jenis_kelamin', 'L')->count();
+        $perempuan = Pendukung::where('jenis_kelamin', 'P')->count();
 
         $persenTotal = $totalPenduduk > 0 ? round(($totalPendukung / $totalPenduduk) * 100, 1) : 0;
         $persenLaki = $totalPendukung > 0 ? round(($laki / $totalPendukung) * 100, 1) : 0;

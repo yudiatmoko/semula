@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('pendukung_logs', function (Blueprint $table) {
             $table->id();
             $table->date('tanggal');
-            $table->integer('perubahan'); // +1 / -1
-            $table->string('aksi'); // tambah / hapus
+            $table->integer('perubahan');
+            $table->string('aksi');
             $table->unsignedBigInteger('admin_id')->nullable();
             $table->timestamps();
         });
