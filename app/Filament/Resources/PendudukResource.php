@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\PendudukResource\Pages;
+use App\Models\Koordinator;
 use App\Models\Penduduk;
 use App\Models\Pendukung;
 use Filament\Forms;
@@ -20,6 +21,7 @@ class PendudukResource extends Resource
     protected static ?string $slug = 'penduduk';
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?string $navigationLabel = 'Data Penduduk';
+    protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
     {
@@ -84,42 +86,85 @@ class PendudukResource extends Resource
                         ->color('success')
                         ->requiresConfirmation()
                         ->modalHeading('Tentukan Koordinator')
-                        ->modalDescription('Masukkan nama koordinator untuk warga yang dipilih.')
+                        ->modalDescription('Pilih koordinator untuk masing-masing RT/RW yang dipilih.')
 
-                        ->form([
-                            Forms\Components\TextInput::make('input_koordinator')
-                                ->label('Nama Koordinator')
-                                ->placeholder('Contoh: Pak Budi')
-                                ->required()
-                                ->autofocus(),
-                        ])
+                        ->form(function (Collection $records) {
+                            $groups = $records->groupBy(fn($r) => $r->rt . '|' . $r->rw);
+
+                            $fields = [];
+                            foreach ($groups as $key => $group) {
+                                [$rt, $rw] = explode('|', $key);
+                                $count = $group->count();
+
+                                $koordinators = Koordinator::where('rt', $rt)
+                                    ->where('rw', $rw)
+                                    ->pluck('nama', 'id')
+                                    ->toArray();
+
+                                $fields[] = Forms\Components\Select::make("koordinator_{$rt}_{$rw}")
+                                    ->label("Koordinator RT {$rt} / RW {$rw} ({$count} orang)")
+                                    ->options($koordinators)
+                                    ->searchable()
+                                    ->required()
+                                    ->helperText(empty($koordinators) ? 'Belum ada koordinator untuk RT/RW ini.' : null);
+                            }
+
+                            return $fields;
+                        })
 
                         ->action(function (Collection $records, array $data) {
                             $berhasil = 0;
-                            $koordinator = $data['input_koordinator'];
+                            $sudahAda = 0;
+                            $tanpaKoordinator = 0;
 
                             foreach ($records as $warga) {
-                                $exists = Pendukung::where('nik', $warga->nik)->exists();
-
-                                if (!$exists) {
-                                    Pendukung::create([
-                                        'nik' => $warga->nik,
-                                        'nama' => $warga->nama,
-                                        'alamat' => $warga->alamat,
-                                        'rt' => $warga->rt,
-                                        'rw' => $warga->rw,
-                                        'jenis_kelamin' => $warga->jenis_kelamin,
-
-                                        'koordinator' => $koordinator,
-                                    ]);
-                                    $berhasil++;
+                                if (Pendukung::where('nik', $warga->nik)->exists()) {
+                                    $sudahAda++;
+                                    continue;
                                 }
+
+                                $koordinatorId = $data["koordinator_{$warga->rt}_{$warga->rw}"] ?? null;
+
+                                if (!$koordinatorId) {
+                                    $tanpaKoordinator++;
+                                    continue;
+                                }
+
+                                Pendukung::create([
+                                    'nik' => $warga->nik,
+                                    'nama' => $warga->nama,
+                                    'alamat' => $warga->alamat,
+                                    'rt' => $warga->rt,
+                                    'rw' => $warga->rw,
+                                    'jenis_kelamin' => $warga->jenis_kelamin,
+                                    'koordinator_id' => $koordinatorId,
+                                ]);
+                                $berhasil++;
+                            }
+
+                            $messages = [];
+                            if ($berhasil > 0) {
+                                $messages[] = "{$berhasil} pendukung berhasil ditambahkan.";
+                            }
+                            if ($sudahAda > 0) {
+                                $messages[] = "{$sudahAda} data sudah terdaftar.";
+                            }
+                            if ($tanpaKoordinator > 0) {
+                                $messages[] = "{$tanpaKoordinator} dilewati (koordinator tidak dipilih).";
                             }
 
                             if ($berhasil > 0) {
-                                Notification::make()->title("Berhasil menambahkan {$berhasil} pendukung")->success()->send();
+                                Notification::make()
+                                    ->title('Proses selesai')
+                                    ->body(implode(' ', $messages))
+                                    ->success()
+                                    ->send();
                             } else {
-                                Notification::make()->title("Data sudah ada")->warning()->send();
+                                Notification::make()
+                                    ->title('Tidak ada data yang ditambahkan')
+                                    ->body(implode(' ', $messages))
+                                    ->warning()
+                                    ->send();
                             }
                         })
                         ->deselectRecordsAfterCompletion(),

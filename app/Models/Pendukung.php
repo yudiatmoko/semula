@@ -10,4 +10,9 @@ class Pendukung extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function koordinator()
+    {
+        return $this->belongsTo(Koordinator::class);
+    }
 }

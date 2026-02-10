@@ -4,10 +4,12 @@ namespace App\Filament\Resources;
 
 use AlperenErsoy\FilamentExport\Actions\FilamentExportBulkAction;
 use App\Filament\Resources\PendukungResource\Pages;
+use App\Models\Koordinator;
 use App\Models\Penduduk;
 use App\Models\Pendukung;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -19,6 +21,7 @@ class PendukungResource extends Resource
     protected static ?string $slug = 'pendukung';
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
     protected static ?string $navigationLabel = 'Data Pendukung';
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {
@@ -31,8 +34,11 @@ class PendukungResource extends Resource
                             ->searchable()
                             ->getSearchResultsUsing(function (string $search) {
                                 return Penduduk::query()
-                                    ->where('nik', 'like', "%{$search}%")
-                                    ->orWhere('nama', 'like', "%{$search}%")
+                                    ->whereNotIn('nik', Pendukung::pluck('nik'))
+                                    ->where(function ($q) use ($search) {
+                                        $q->where('nik', 'like', "%{$search}%")
+                                          ->orWhere('nama', 'like', "%{$search}%");
+                                    })
                                     ->limit(20)
                                     ->get()
                                     ->mapWithKeys(fn($p) => [
@@ -49,6 +55,7 @@ class PendukungResource extends Resource
                                     $set('alamat', null);
                                     $set('rt', null);
                                     $set('rw', null);
+                                    $set('koordinator_id', null);
                                     return;
                                 }
 
@@ -60,6 +67,7 @@ class PendukungResource extends Resource
                                     $set('alamat', $penduduk->alamat);
                                     $set('rt', $penduduk->rt);
                                     $set('rw', $penduduk->rw);
+                                    $set('koordinator_id', null);
                                 }
                             })
                             ->dehydrated(false)
@@ -86,9 +94,27 @@ class PendukungResource extends Resource
 
                 Forms\Components\Section::make('Data Koordinator Lapangan')
                     ->schema([
-                        Forms\Components\TextInput::make('koordinator')
+                        Forms\Components\Select::make('koordinator_id')
+                            ->label('Koordinator')
+                            ->relationship('koordinator', 'nama')
+                            ->options(function (Get $get) {
+                                $rt = $get('rt');
+                                $rw = $get('rw');
+
+                                if (!$rt || !$rw) {
+                                    return [];
+                                }
+
+                                return Koordinator::where('rt', $rt)
+                                    ->where('rw', $rw)
+                                    ->pluck('nama', 'id')
+                                    ->toArray();
+                            })
+                            ->searchable()
+                            ->preload()
                             ->required()
-                            ->label('Nama Koordinator'),
+                            ->live()
+                            ->helperText('Koordinator otomatis difilter berdasarkan RT & RW penduduk.'),
                     ]),
             ]);
     }
@@ -99,7 +125,7 @@ class PendukungResource extends Resource
             ->paginated([50, 100, 500])
             ->defaultPaginationPageOption(50)
             ->columns([
-                Tables\Columns\TextColumn::make('koordinator')
+                Tables\Columns\TextColumn::make('koordinator.nama')
                     ->label('Koordinator')
                     ->badge()
                     ->color('info')
@@ -115,8 +141,9 @@ class PendukungResource extends Resource
                 Tables\Columns\TextColumn::make('rw')->label('RW')
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('koordinator')
-                    ->options(fn() => Pendukung::pluck('koordinator', 'koordinator')->unique()->toArray()),
+                Tables\Filters\SelectFilter::make('koordinator_id')
+                    ->label('Koordinator')
+                    ->relationship('koordinator', 'nama'),
                 Tables\Filters\SelectFilter::make('alamat')
                     ->options(fn() => Pendukung::select('alamat')->distinct()->pluck('alamat', 'alamat')->toArray())
                     ->searchable(),

@@ -6,20 +6,21 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\FromArray;
 
-class PendukungTemplateExport implements WithHeadings, ShouldAutoSize, FromArray
+class KoordinatorTemplateExport implements WithHeadings, ShouldAutoSize, FromArray
 {
     public function headings(): array
     {
         return [
-            'nik',
-            'koordinator',
+            'nama',
+            'rt',
+            'rw',
         ];
     }
 
     public function array(): array
     {
         return [
-            ['3201234567890001', 'Pak Budi'],
+            ['Pak Budi', '001', '002'],
         ];
     }
 }

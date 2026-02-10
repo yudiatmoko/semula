@@ -4,6 +4,7 @@ namespace App\Imports;
 
 use App\Models\Pendukung;
 use App\Models\Penduduk;
+use App\Models\Koordinator;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -19,6 +20,19 @@ class PendukungImport implements ToModel, WithHeadingRow, WithValidation, WithCh
             return null;
         }
 
+        $koordinator = Koordinator::where('nama', $row['koordinator'])
+            ->where('rt', $penduduk->rt)
+            ->where('rw', $penduduk->rw)
+            ->first();
+
+        if (!$koordinator) {
+            $koordinator = Koordinator::where('nama', $row['koordinator'])->first();
+        }
+
+        if (!$koordinator) {
+            return null;
+        }
+
         return Pendukung::updateOrCreate(
             ['nik' => $row['nik']],
             [
@@ -27,7 +41,7 @@ class PendukungImport implements ToModel, WithHeadingRow, WithValidation, WithCh
                 'alamat' => $penduduk->alamat,
                 'rt' => $penduduk->rt,
                 'rw' => $penduduk->rw,
-                'koordinator' => $row['koordinator'],
+                'koordinator_id' => $koordinator->id,
             ]
         );
     }
