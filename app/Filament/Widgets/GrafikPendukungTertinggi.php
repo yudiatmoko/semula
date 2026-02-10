@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Facades\DB;
 use App\Models\Penduduk;
 use App\Models\Pendukung;
 
@@ -21,38 +22,43 @@ class GrafikPendukungTertinggi extends ChartWidget
     {
         $filterFields = ['alamat', 'rt', 'rw', 'jenis_kelamin'];
 
-        $pendudukQuery = Penduduk::query();
+        // Subquery: total penduduk per RT/RW
+        $pendudukSub = Penduduk::query();
         foreach ($filterFields as $field) {
             if (!empty($this->filters[$field] ?? null)) {
-                $pendudukQuery->where($field, $this->filters[$field]);
+                $pendudukSub->where($field, $this->filters[$field]);
             }
         }
-
-        $pendudukSub = $pendudukQuery
+        $pendudukSub = $pendudukSub
             ->selectRaw('rt, rw, COUNT(*) as total_penduduk')
             ->groupBy('rt', 'rw');
 
-        $pendukungQuery = Pendukung::query();
+        // Subquery: total pendukung per RT/RW
+        $pendukungSub = Pendukung::query();
         foreach ($filterFields as $field) {
             if (!empty($this->filters[$field] ?? null)) {
-                $pendukungQuery->where($field, $this->filters[$field]);
+                $pendukungSub->where($field, $this->filters[$field]);
             }
         }
+        $pendukungSub = $pendukungSub
+            ->selectRaw('rt, rw, COUNT(*) as total_pendukung')
+            ->groupBy('rt', 'rw');
 
-        $rows = $pendukungQuery
-            ->joinSub($pendudukSub, 'penduduk_totals', function ($join) {
+        // Start from penduduk (all RT/RW), LEFT JOIN pendukung counts
+        $rows = DB::query()
+            ->fromSub($pendudukSub, 'penduduk_totals')
+            ->leftJoinSub($pendukungSub, 'pendukung_totals', function ($join) {
                 $join
-                    ->on('pendukungs.rt', '=', 'penduduk_totals.rt')
-                    ->on('pendukungs.rw', '=', 'penduduk_totals.rw');
+                    ->on('penduduk_totals.rt', '=', 'pendukung_totals.rt')
+                    ->on('penduduk_totals.rw', '=', 'pendukung_totals.rw');
             })
             ->selectRaw(
-                "pendukungs.rt,
-                pendukungs.rw,
-                COUNT(pendukungs.id) as total_pendukung,
+                "penduduk_totals.rt,
+                penduduk_totals.rw,
+                COALESCE(pendukung_totals.total_pendukung, 0) as total_pendukung,
                 penduduk_totals.total_penduduk,
-                ROUND((COUNT(pendukungs.id) / NULLIF(penduduk_totals.total_penduduk, 0)) * 100, 2) as persentase"
+                ROUND((COALESCE(pendukung_totals.total_pendukung, 0) / NULLIF(penduduk_totals.total_penduduk, 0)) * 100, 2) as persentase"
             )
-            ->groupBy('pendukungs.rt', 'pendukungs.rw', 'penduduk_totals.total_penduduk')
             ->orderBy('total_pendukung', 'desc')
             ->limit(10)
             ->get();
