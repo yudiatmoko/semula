@@ -3,6 +3,12 @@ set -e
 
 echo "🚀 Starting Semula..."
 
+# Create .env if not exists (needed by artisan commands)
+if [ ! -f /var/www/html/.env ]; then
+    echo "⏳ Creating .env file..."
+    touch /var/www/html/.env
+fi
+
 # Wait for database to be ready
 echo "⏳ Waiting for database..."
 until php artisan db:monitor --databases=mysql 2>/dev/null; do
